@@ -18,9 +18,9 @@ class Chef
         :description => 'Maximum number of days since last checkin before node is considered stale (default: 30)'
 
       option :keep_versions,
-        :long => '--keep_versions MIN',
-        :default => 0,
-        :description => 'Keep a minimum of this many versions of each cookbook (default: 0)'
+        long: "--keep_versions MIN",
+        default: 0,
+        description: "Keep a minimum of this many versions of each cookbook (default: 0)"
 
       def run
         ensure_reports_dir!
@@ -45,7 +45,7 @@ class Chef
           used_cookbooks = {}
           nodes = nodes_list(org)[0]
 
-	  used_cookbooks = keep_cookbook_versions(cb_list, keep_versions)
+          used_cookbooks = keep_cookbook_versions(cb_list, keep_versions)
 
           nodes.each do |node|
             # If the node hasn't checked in.
@@ -134,15 +134,15 @@ class Chef
           end
         end
         cb_list
-      enda
+      end
 
       def keep_cookbook_versions(cb_list, min)
-	retain = {}
-	cb_list.each do |name, versions|
-	  keep = versions.sort{ |a,b| Gem::Version.new(a) <=> Gem::Version.new(b) }.last(min)
-	  retain[name] = keep
-	end
-	retain
+        retain = {}
+        cb_list.each do |name, versions|
+          keep = versions.sort { |a, b| Gem::Version.new(a) <=> Gem::Version.new(b) }.last(min)
+          retain[name] = keep
+        end
+        retain
       end
 
       def cookbook_count(cb_list)
