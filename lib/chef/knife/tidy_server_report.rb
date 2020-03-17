@@ -18,7 +18,7 @@ class Chef
         :description => 'Maximum number of days since last checkin before node is considered stale (default: 30)'
 
       option :keep_versions,
-        long: "--keep_versions MIN",
+        long: "--keep-versions MIN",
         default: 0,
         description: "Keep a minimum of this many versions of each cookbook (default: 0)"
 
