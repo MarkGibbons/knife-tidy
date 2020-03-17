@@ -17,6 +17,11 @@ class Chef
         :default => 30,
         :description => 'Maximum number of days since last checkin before node is considered stale (default: 30)'
 
+      option :keep_versions,
+        :long => '--keep_versions MIN',
+        :default => 0,
+        :description => 'Keep a minimum of this many versions of each cookbook (default: 0)'
+
       def run
         ensure_reports_dir!
 
@@ -31,6 +36,7 @@ class Chef
 
         stale_orgs = []
         node_threshold = config[:node_threshold].to_i
+        keep_versions  = config[:keep_versions].to_i
 
         orgs.each do |org|
           ui.info "  Organization: #{org}"
@@ -39,11 +45,29 @@ class Chef
           used_cookbooks = {}
           nodes = nodes_list(org)[0]
 
-          nodes.select{|node| !node['cookbooks'].nil?}.each do |node|
-            node['cookbooks'].each do |name, version_hash|
-              version = Gem::Version.new(version_hash['version']).to_s
-              if used_cookbooks[name] && !used_cookbooks[name].include?(version)
-                used_cookbooks[name].push(version)
+	  used_cookbooks = keep_cookbook_versions(cb_list, keep_versions)
+
+          nodes.each do |node|
+            # If the node hasn't checked in.
+            unless node["chef_packages"]
+              # If the node is under an hour old.
+              if (Time.now.to_i - node["ohai_time"].to_i) < 3600
+                unconverged_recent_nodes << node["name"]
+              end
+              next
+            end
+            chef_version = Gem::Version.new(node["chef_packages"]["chef"]["version"])
+            # If the node has checked in within the node_threshold with a client older than 12.3
+            if chef_version < Gem::Version.new("12.3") && (Time.now.to_i - node["ohai_time"].to_i) <= node_threshold * 86400
+              pre_12_3_nodes << node["name"]
+            end
+          end
+
+          nodes.select { |node| !node["cookbooks"].nil? }.each do |node|
+            node["cookbooks"].each do |name, version_hash|
+              version = Gem::Version.new(version_hash["version"]).to_s
+              if used_cookbooks[name]
+                used_cookbooks[name].push(version) unless used_cookbooks[name].include?(version)
               else
                 used_cookbooks[name] = [version]
               end
@@ -110,6 +134,15 @@ class Chef
           end
         end
         cb_list
+      enda
+
+      def keep_cookbook_versions(cb_list, min)
+	retain = {}
+	cb_list.each do |name, versions|
+	  keep = versions.sort{ |a,b| Gem::Version.new(a) <=> Gem::Version.new(b) }.last(min)
+	  retain[name] = keep
+	end
+	retain
       end
 
       def cookbook_count(cb_list)
