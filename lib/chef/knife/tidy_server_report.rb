@@ -22,6 +22,11 @@ class Chef
         default: 0,
         description: "Keep a minimum of this many versions of each cookbook (default: 0)"
 
+      option :keep_versions,
+        long: "--keep-versions MIN",
+        default: 0,
+        description: "Keep a minimum of this many versions of each cookbook (default: 0)"
+
       def run
         ensure_reports_dir!
 
@@ -44,6 +49,8 @@ class Chef
           version_count = cookbook_count(cb_list).sort_by(&:last).reverse.to_h
           used_cookbooks = {}
           nodes = nodes_list(org)[0]
+
+          used_cookbooks = keep_cookbook_versions(cb_list, keep_versions)
 
           used_cookbooks = keep_cookbook_versions(cb_list, keep_versions)
 
