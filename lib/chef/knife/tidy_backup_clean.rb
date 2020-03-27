@@ -32,6 +32,10 @@ class Chef
         :long => '--gen-gsub',
         :description => 'Generate a new boiler plate global substitutions file: \'substitutions.json\'.'
 
+      option :no_load_cookbooks,,
+        long: "--no-load-cookbooks",
+	description: "Do not load cookbooks as part of organization verification. Default is to load the cookbooks"
+
       def run
         FileUtils.rm_f(action_needed_file_path)
 
@@ -58,7 +62,7 @@ class Chef
           fix_self_dependencies(org)
           fix_cookbook_names(org)
           generate_new_metadata(org)
-          load_cookbooks(org)
+          load_cookbooks(org) unless config[:no_load_cookbooks]
         end
 
         completion_message
@@ -166,7 +170,7 @@ class Chef
             broken_cookooks_add(org, cookbook)
           end
         end
-      rescue LoadError => e
+      rescue LoadError => e   # how shouldChef::Exceptions::CookbookMergingError be dealt with
         ui.error e
         exit 1
       end
